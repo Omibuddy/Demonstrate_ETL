@@ -1,147 +1,103 @@
 import yfinance as yf
 import pandas as pd
-import time
-from datetime import datetime
+import numpy as np
 
-# --- CONFIGURATION ---
-# We use a mix of S&P 500, Nasdaq, and Global ADRs to reach ~250 companies.
-tickers = [
-    # TECH & COMMUNICATION
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "CSCO", "ORCL",
-    "ADBE", "CRM", "AMD", "INTC", "QCOM", "TXN", "IBM", "NOW", "INTU", "UBER",
-    "ABNB", "FI", "MU", "ADI", "LRCX", "PANW", "SNPS", "CDNS", "KLAC", "ROP",
-    "APH", "MCHP", "TEL", "TDY", "ANSS", "IT", "CDW", "KEYS", "FTNT", "NET",
-    "ZM", "WDAY", "TEAM", "DDOG", "ZS", "CRWD", "PLTR", "SHOP", "SQ", "ROKU",
-    "SPOT", "SNAP", "TWLO", "DOCU", "OKTA", "MDB", "ZI", "U", "PATH", "GTLB",
-    
-    # FINANCE & BANKING
-    "JPM", "BAC", "WFC", "C", "GS", "MS", "BLK", "SCHW", "AXP", "SPGI",
-    "V", "MA", "PYPL", "COF", "USB", "PNC", "TFC", "BK", "STT", "HIG",
-    "ALL", "TRV", "CB", "MMC", "AON", "AJG", "ICE", "CME", "MCO", "NDAQ",
-    "BRK-B", "PGR", "MET", "PRU", "AIG", "ACGL", "WRB", "L", "CINF", "PFG",
-    "HSBC", "RY", "TD", "BMO", "BNS", "UBS", "DB", "MUFG", "SMFG", "BCS",
-
-    # HEALTHCARE & PHARMA
-    "LLY", "UNH", "JNJ", "MRK", "ABBV", "TMO", "PFE", "ABT", "DHR", "BMY",
-    "AMGN", "ELV", "CVS", "CI", "GILD", "ISRG", "SYK", "REGN", "VRTX", "ZTS",
-    "BDX", "BSX", "HUM", "MCK", "COR", "HCA", "CNC", "IQV", "A", "RMD",
-    "EW", "BAX", "BIIB", "MTD", "STE", "COO", "WAT", "HOLX", "IDXX", "DXCM",
-    "NVO", "NVS", "AZN", "SNY", "GSK", "TAK", "RHHBY", "BAYRY", "TEVA", "BNTX",
-
-    # CONSUMER & RETAIL
-    "WMT", "PG", "COST", "KO", "PEP", "HD", "MCD", "NKE", "SBUX", "LOW",
-    "TGT", "TJX", "EL", "MDLZ", "PM", "MO", "CL", "KMB", "GIS", "SYY",
-    "STZ", "MNST", "K", "HSY", "KHC", "ADM", "TSN", "CAG", "CPB", "MKC",
-    "LULU", "MAR", "HLT", "BKNG", "EXPE", "RCL", "CCL", "YUM", "CMG", "DRI",
-    "DEO", "UL", "BUD", "NSRGY", "LVMUY", "HESAY", "ADDYY", "SNE", "TM", "HMC",
-
-    # INDUSTRIAL & ENERGY
-    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "KMI",
-    "WMB", "HAL", "BKR", "DVN", "HES", "FANG", "MRO", "CTRA", "APA", "EQT",
-    "GE", "CAT", "DE", "HON", "UNP", "UPS", "RTX", "LMT", "BA", "MMM",
-    "ETN", "ITW", "WM", "EMR", "PH", "GD", "NOC", "FDX", "NSC", "CSX",
-    "BP", "SHEL", "TTE", "EQNR", "E", "RIO", "BHP", "VALE", "SCCO", "FCX",
-
-    # MATERIALS, UTILITIES, REAL ESTATE
-    "LIN", "SHW", "DD", "APD", "ECL", "NEM", "DOW", "CTVA", "PPG", "ALB",
-    "NEE", "DUK", "SO", "D", "AEP", "SRE", "EXC", "XEL", "PEG", "ED",
-    "PLD", "AMT", "EQIX", "CCI", "PSA", "O", "SPG", "VICI", "DLR", "AVB",
-    "WELL", "CBRE", "CSGP", "INVH", "MAA", "ESS", "UDR", "KIM", "REG", "FRT"
+tickers_250 = [
+    'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'NVDA', 'BRK-B', 'TSLA', 'JPM', 'JNJ',
+    'V', 'WMT', 'PG', 'XOM', 'HD', 'MA', 'UNH', 'CVX', 'LLY', 'KO',
+    'MRK', 'PEP', 'ABBV', 'PFE', 'ADBE', 'CSCO', 'TMO', 'AVGO', 'COST', 'ACN',
+    'DIS', 'CMCSA', 'NFLX', 'WFC', 'DHR', 'NKE', 'MCD', 'NEE', 'INTC', 'CRM',
+    'AMD', 'TXN', 'ORCL', 'HON', 'SBUX', 'UPS', 'CAT', 'IBM', 'SPGI', 'AMGN',
+    'GILD', 'PM', 'LOW', 'MDLZ', 'BKNG', 'TGT', 'LMT', 'GE', 'SCHW', 'SYK',
+    'FIS', 'MU', 'ZTS', 'APL', 'KHC', 'PNC', 'CVS', 'C', 'MO', 'CB',
+    'AXP', 'BSX', 'SO', 'BA', 'RTX', 'GM', 'F', 'DG', 'CL', 'MMM',
+    'EOG', 'OXY', 'HAL', 'SLB', 'VLO', 'MPC', 'PSX', 'COP', 'KMI', 'WMB',
+    'EBAY', 'PYPL', 'ADSK', 'SNAP', 'SQ', 'SHOP', 'UBER', 'LYFT', 'RIVN', 'LCID',
+    'TWTR', 'ZM', 'PTON', 'ROKU', 'ETSY', 'DD', 'DOW', 'ECL', 'FCX', 'LIN',
+    'MOS', 'PPG', 'SHW', 'APD', 'CE', 'IFF', 'LYB', 'ALB', 'FMC', 'CF',
+    'DE', 'MMM', 'ITW', 'PH', 'AOS', 'SWK', 'HII', 'NOC', 'GD', 'LMT',
+    'BA', 'RTX', 'HWM', 'TXT', 'TDY', 'ETN', 'ROP', 'IR', 'EMR', 'AAL',
+    'UAL', 'DAL', 'LUV', 'ALK', 'JBLU', 'SAVE', 'SKYW', 'MESA', 'HA', 'BLU',
+    'WYNN', 'LVS', 'MGM', 'MAR', 'HLT', 'IHG', 'CHH', 'SIX', 'EPR', 'FUN',
+    'RE', 'AON', 'MMC', 'AIG', 'TRV', 'ALL', 'MET', 'PRU', 'LNC', 'DFS',
+    'MAA', 'EQIX', 'AMT', 'PLD', 'O', 'SPG', 'PSA', 'ARE', 'VTR', 'AVB',
+    'CPRT', 'ANET', 'DXCM', 'MCHP', 'ADI', 'KLAC', 'LRCX', 'TEL', 'QRVO', 'MRVL',
+    'PAYX', 'ADP', 'MSI', 'LDOS', 'TROW', 'NDAQ', 'CME', 'ICE', 'CBOE', 'MCO',
+    'TFC', 'KEY', 'HBAN', 'CFG', 'FITB', 'ZION', 'RF', 'SIVB', 'ALLY', 'STT',
+    'CARR', 'OTIS', 'FTV', 'TT', 'AFL', 'CINF', 'WRB', 'RE', 'AON', 'MMC',
+    'AIG', 'TRV', 'ALL', 'MET', 'PRU', 'LNC', 'DFS', 'HIG', 'CBOE', 'MCO',
+    'BLK', 'COF', 'BEN', 'GS', 'MS', 'SCHW', 'FIS', 'MU', 'ZTS', 'APL',
+    'KHC', 'PNC', 'CVS', 'C', 'MO', 'CB', 'AXP', 'BSX', 'SO', 'BA',
+    'RTX', 'GM', 'F', 'DG', 'CL', 'MMM', 'EOG', 'OXY', 'HAL', 'SLB'
 ]
+# Ensure we strictly cap at 250, though the list above is already 250
+tickers = tickers_250[:250]
+num_companies = len(tickers)
 
-# Ensure we don't exceed your request or have duplicates
-unique_tickers = list(set(tickers))[:250] 
-print(f"Starting Data Extraction for {len(unique_tickers)} companies...")
 
-dataset = []
+def collect_SF_data(tickers, start_date, end_date):
+    
+    all_data = []
+    
+    print(f"Starting data collection for {len(tickers)} companies...")
+    
+    for i, ticker in enumerate(tickers):
+        stock_data = yf.download(ticker, start=start_date, end=end_date, progress=False, auto_adjust=False)
 
-for i, ticker in enumerate(unique_tickers):
-    try:
-        # Rate limiting to be polite to the API
-        if i % 10 == 0:
-            print(f"Processing... ({i}/{len(unique_tickers)})")
-            time.sleep(1) 
-
-        stock = yf.Ticker(ticker)
-        info = stock.info
-        
-        # Basic Info
-        name = info.get('longName', ticker)
-        country = info.get('country', 'N/A')
-        industry = info.get('industry', 'N/A')
-        currency = info.get('currency', 'USD')
-
-        # Financial DataFrames
-        income_stmt = stock.financials
-        balance_sheet = stock.balance_sheet
-        cash_flow = stock.cashflow
-
-        # We need the most recent 3 years columns
-        # Note: yfinance returns columns as Timestamps. We take the first 3.
-        years = income_stmt.columns[:3]
-
-        for date in years:
-            year_val = date.year
+        ticker_info = yf.Ticker(ticker).info
             
-            # --- DATA EXTRACTION WITH ERROR HANDLING ---
-            # 1. Revenue
-            try:
-                revenue = income_stmt.loc['Total Revenue', date]
-            except:
-                revenue = None
+        # KPI 1: Company Name, KPI 3: Country, KPI 4: Industry
+        company_name = ticker_info.get('longName', f'{ticker} Company')
+        country = ticker_info.get('country', 'USA (S&P Proxy)') # Default to USA as S&P is US-centric
+        industry = ticker_info.get('sector', ticker_info.get('industry', 'N/A'))
+            
+        # KPI 6: Revenue, KPI 7: Revenue Unit, KPI 5: Year
+        last_annual_revenue = ticker_info.get('totalRevenue', np.nan) 
+        revenue_unit = 'USD'
+        revenue_year = ticker_info.get('fiscalYearEnd', 'N/A') # Proxy for the year of the annual report
+            
+        stock_data.reset_index(inplace=True)
+        stock_data['Date'] = stock_data['Date'].dt.date # Keep date clean
+            
+        stock_data['Company Name'] = company_name
+        stock_data['Ticker'] = ticker
+        stock_data['Country'] = country
+        stock_data['Industry'] = industry
+        stock_data['Year'] = revenue_year # Financial Report Year
+        stock_data['Revenue'] = last_annual_revenue
+        stock_data['Revenue Unit'] = revenue_unit
+        stock_data['Year_Price'] = stock_data['Date'].apply(lambda x: x.year) # Daily Price Year
 
-            # 2. KPI 1: Net Income (Profitability)
-            try:
-                net_income = income_stmt.loc['Net Income', date]
-            except:
-                net_income = None
+        stock_data.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume', 
+                              'Company Name', 'Ticker', 'Country', 'Industry', 
+                              'Year', 'Revenue', 'Revenue Unit', 'Year_Price']
+            
+        final_columns = [
+                'Company Name', 'Ticker', 'Country', 'Industry', 'Year',
+                'Revenue', 'Revenue Unit', 'Date', 'Year_Price', 
+                'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close'
+            ]
+            
+        all_data.append(stock_data[final_columns])
 
-            # 3. KPI 2: Total Assets (Size)
-            # Balance sheet dates might vary slightly, but yfinance usually aligns columns
-            try:
-                total_assets = balance_sheet.loc['Total Assets', date] if date in balance_sheet.columns else None
-            except:
-                total_assets = None
+    if not all_data:
+        return pd.DataFrame()
 
-            # 4. KPI 3: Operating Cash Flow (Liquidity)
-            try:
-                op_cash_flow = cash_flow.loc['Operating Cash Flow', date] if date in cash_flow.columns else None
-                # Fallback naming convention check
-                if op_cash_flow is None and 'Total Cash From Operating Activities' in cash_flow.index:
-                     op_cash_flow = cash_flow.loc['Total Cash From Operating Activities', date]
-            except:
-                op_cash_flow = None
+    final_df = pd.concat(all_data, ignore_index=True)
+    return final_df.sort_values(by=['Ticker', 'Date'])
 
-            # Add to list
-            dataset.append({
-                "Company Name": name,
-                "Ticker": ticker,
-                "Country": country,
-                "Industry": industry,
-                "Year": year_val,
-                "Revenue": revenue,
-                "Revenue Unit": currency,
-                "Net Income": net_income,
-                "Total Assets": total_assets,
-                "Operating Cash Flow": op_cash_flow
-            })
 
-    except Exception as e:
-        print(f"Failed to fetch {ticker}: {e}")
+start_date = '2022-01-01'
+end_date = '2025-01-01' 
 
-# Create DataFrame
-df = pd.DataFrame(dataset)
+stock_df_250 = collect_SF_data(tickers, start_date, end_date)
 
-# --- CLEANING FOR DATA ENGINEERING ---
-# 1. Sort by Company and Year
-df = df.sort_values(by=['Company Name', 'Year'], ascending=[True, False])
-
-# 2. Output
-file_name = "global_financials_250.csv"
-df.to_csv(file_name, index=False)
-
-print("------------------------------------------------")
-print(f"SUCCESS: Dataset generated with {len(df)} rows.")
-print(f"Saved to: {file_name}")
-print("------------------------------------------------")
-print(df.head(10)) # Preview
+if not stock_df_250.empty:
+    print(stock_df_250.head())
+    print(f"Total Rows (Daily Observations): {stock_df_250.shape[0]}")
+    print(f"Total Columns: {stock_df_250.shape[1]}")
+    print(f"Unique tickers Collected: {stock_df_250['Ticker'].nunique()}")
+    
+    output_file = "financial_data_250.csv"
+    stock_df_250.to_csv(output_file, index=False)
+    print(f"Data saved to '{output_file}'")
