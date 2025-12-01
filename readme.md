@@ -2,13 +2,8 @@
 
 ## Dataset
 
-This project demonstrates an ETL (Extract, Transform, Load) pipeline using Python to process financial data from a public source.
-The dataset used is the Global Financial 250 dataset, containing financial information for 250 companies.
-The data includes company names, countries, industries, and financial metrics for the most recent 3 years of data, along with additional KPIs such as revenue, profit margins, and market capitalization.
-
-### KPIs
-
-Company Name,Ticker,Country,Industry,Year,Revenue,Revenue Unit,Date,Year_Price,Open,High,Low,Close,Volume,Adj Close
+This project demonstrates an ETL (Extract, Transform, Load) pipeline using Python to process daily market data for 250 global companies.
+The raw input file is `financial_data_250.csv`, which contains company-level identifiers and OHLCV price history for the most recent 3 years, along with revenue and other KPIs.
 
 ### Data Dictionary
 
@@ -33,26 +28,26 @@ Company Name,Ticker,Country,Industry,Year,Revenue,Revenue Unit,Date,Year_Price,O
 
 ## Pipeline Components
 
-- **Extract**: Data extraction from the CSV file using pandas
-- **Transform**: Data cleaning, normalization, and feature engineering
-- **Load**: Output to a structured format for analysis
+- **Extract**: Read `financial_data_250.csv` using `ETL_demo.ipynb` into a pandas DataFrame.
 
 ### Transform steps in this project
 
-1. **Data quality assessment** – Inspect schema, basic statistics, missing values and duplicates to understand data issues before transforming.
-2. **Handling missing values and duplicates** – Fill the reporting `Year` from `Year_Price` and remove duplicate rows so that each observation is consistent and counted once.
-3. **Outlier removal** – Apply the IQR method on price and volume columns to remove extreme values that could distort models and summary statistics.
-4. **Normalization and scaling** – Use Min–Max scaling on price and volume-related columns to bring them to a common [0, 1] range, which is important for distance-based and gradient-based ML models.
-5. **Feature engineering** – Create lag features, rolling averages (10-day and 30-day SMAs) and first differences of the scaled close price to capture trend, momentum and short-term dynamics.
-6. **Final structured output** – Save the cleaned, scaled and feature-enriched time series as `engineered_financial_data_250.csv`, which serves as the input for downstream forecasting, prediction and ML model training.
-
-### Output
-
-`engineered_financial_data_250.csv` is the final output of the ETL pipeline, which contains the cleaned, scaled and feature-enriched time series data for 250 companies.
+1. **Data quality assessment** – Inspect schema (`info()`), basic statistics, missing values and ~9.7k duplicate rows to understand data issues before transforming.
+2. **Data cleaning** – Drop duplicate rows, fill the reporting `Year` from `Year_Price`, and cast `Date` to a proper `datetime` type so that each observation is consistent and time-indexed.
+3. **Outlier removal (IQR)** – Apply the IQR method on numeric price/volume columns (`Open`, `High`, `Low`, `Close`, `Adj Close`, `Volume`) to remove extreme values that could distort models and summary statistics.
+4. **Normalization and scaling** – Use `MinMaxScaler` on the same numeric columns to create scaled versions (`*_Scaled`) in the [0, 1] range, which is important for distance-based and gradient-based ML models.
+5. **Time-series feature engineering** – Sort by `Ticker` and `Date`, then create:
+   - `Lag_1_Close_Scaled`: previous-day scaled close per ticker
+   - `SMA_10` and `SMA_30`: 10- and 30-day rolling averages of `Close_Scaled` per ticker
+   - `Close_Scaled_Diff`: first difference of `Close_Scaled` per ticker for stationarity.
+6. **Decomposition & stationarity diagnostics (single ticker)** – For one sample ticker, decompose `Close_Scaled` into `Trend`, `Seasonality`, and `Residual` using `seasonal_decompose`, and run Augmented Dickey–Fuller (ADF) tests on the original and differenced series.
+7. **Final structured output** – Drop rows with missing values in key model features (`Close_Scaled`, `Close_Scaled_Diff`, `Lag_1_Close_Scaled`, `SMA_10`, `SMA_30`)
 
 ## Technologies Used
 
 - Python 3.x
 - pandas for data manipulation
-- CSV file handling
+- yfinance for data extraction
+- numpy for numerical operations
+- matplotlib for data visualization
 - Git for version control
