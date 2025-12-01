@@ -51,3 +51,8 @@ The raw input file is `financial_data_250.csv`, which contains company-level ide
 - numpy for numerical operations
 - matplotlib for data visualization
 - Git for version control
+
+## reference:
+1. [unlocking-financial-data-cleaning-preprocessing-guide](https://www.pyquantnews.com/free-python-resources/unlocking-financial-data-cleaning-preprocessing-guide)
+2. [Yahoo Finance](https://finance.yahoo.com)
+3. [Kaggle Stock Market Dataset](https://www.kaggle.com/datasets/jacksoncrow/stock-market-dataset/data)
